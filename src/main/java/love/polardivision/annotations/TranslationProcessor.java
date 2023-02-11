@@ -1,41 +1,22 @@
 /*
- * Copyright 2022 @Frooastside
+ * Copyright © 2022-2023 @Frooastside
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package love.polardivision.annotations;
 
 import com.google.auto.service.AutoService;
-import java.awt.Desktop;
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.net.URI;
+
+import javax.annotation.processing.*;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.*;
 import java.util.Map.Entry;
 import java.util.Set;
-import javax.annotation.processing.AbstractProcessor;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.annotation.processing.Processor;
-import javax.annotation.processing.RoundEnvironment;
-import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.AnnotationMirror;
-import javax.lang.model.element.AnnotationValue;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.TypeElement;
 
 @SupportedAnnotationTypes("love.polardivision.engine.language.UsesTranslation")
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
@@ -44,31 +25,31 @@ public class TranslationProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    System.out.println(annotations);
+    System.out.println(System.getProperties().entrySet());
     boolean claimed = false;
     for (TypeElement annotationElement : annotations) {
       Set<? extends Element> annotatedElements = roundEnv.getElementsAnnotatedWith(annotationElement);
-      switch (annotationElement.getSimpleName().toString()) {
-        case "UsesTranslation":
-          claimed = true;
-          handleTranslation(annotatedElements);
-          break;
-        default:
-          break;
+      if (annotationElement.getQualifiedName().toString().equals("love.polardivision.engine.language.UsesTranslation")) {
+        claimed = true;
+        handleTranslation(annotatedElements, annotationElement);
       }
     }
     return claimed;
   }
 
-  private void handleTranslation(Set<? extends Element> annotatedElements) {
+  private void handleTranslation(Set<? extends Element> annotatedElements, TypeElement annotation) {
     for (Element enclosedElement : annotatedElements) {
-      for (AnnotationMirror annotation : enclosedElement.getAnnotationMirrors()) {
-        System.out.println(annotation.getAnnotationType());
-      }
-      for (Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
-          enclosedElement.getAnnotationMirrors().get(0).getElementValues().entrySet()) {
-        System.out.println(entry.getKey().getSimpleName());
-        System.out.println(entry.getValue().getValue());
+      for (AnnotationMirror annotationMirror : enclosedElement.getAnnotationMirrors()) {
+        if (!annotationMirror.getAnnotationType().toString().equals(annotation.getQualifiedName().toString())) {
+          System.out.println("not matching");
+          continue;
+        }
+        for (Entry<? extends ExecutableElement, ? extends AnnotationValue> entry :
+          annotationMirror.getElementValues().entrySet()) {
+          if (entry.getKey().getSimpleName().toString().equals("value")) {
+            System.out.printf("%s= %n", entry.getValue().getValue());
+          }
+        }
       }
     }
   }
